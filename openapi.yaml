@@ -1,0 +1,556 @@
+openapi: 3.0.3
+info:
+  title: Prizepulse
+  version: 0.1.0
+  description: >-
+    Economic-impact measurement system that decomposes AI’s contribution to UK GDP into
+    productivity versus consumption-side channels by sector, region and assumption set.
+  x-product-slug: ai-gov-prizepulse
+  x-source: ai-in-gov/pwc-ai-uk-report-v2/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Scenarios
+  - name: AssumptionSets
+  - name: ChannelImpacts
+  - name: RegionalImpacts
+  - name: SectorImpacts
+  - name: LabourEffects
+  - name: Reporting
+paths:
+  /v1/scenarios:
+    get:
+      operationId: listScenarios
+      tags: [Scenarios]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: releaseState
+          in: query
+          schema: { type: string, enum: [draft, release_candidate, published] }
+      responses:
+        '200':
+          description: Scenarios page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeScenario' }
+    post:
+      operationId: createScenario
+      tags: [Scenarios]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScenarioCreate' }
+      responses:
+        '201':
+          description: Scenario created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeScenario' }
+  /v1/scenarios/{scenarioId}/clone:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: cloneScenario
+      tags: [Scenarios]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label: { type: string }
+                assumptionSetId: { type: string }
+      responses:
+        '201':
+          description: Scenario cloned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeScenario' }
+  /v1/scenarios/{scenarioId}/run:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: runScenario
+      tags: [Scenarios]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '202':
+          description: Scenario run accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeScenario' }
+  /v1/assumption-sets:
+    get:
+      operationId: listAssumptionSets
+      tags: [AssumptionSets]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Assumption sets page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeAssumptionSet' }
+    post:
+      operationId: createAssumptionSet
+      tags: [AssumptionSets]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssumptionSetCreate' }
+      responses:
+        '201':
+          description: Assumption set created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeAssumptionSet' }
+  /v1/assumption-sets/{assumptionSetId}/diff/{otherId}:
+    parameters:
+      - name: assumptionSetId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: otherId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: diffAssumptionSets
+      tags: [AssumptionSets]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Assumption diff
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeAssumptionDiff' }
+  /v1/scenarios/{scenarioId}/channel-impacts:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getChannelImpacts
+      tags: [ChannelImpacts]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Channel impacts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeChannelImpact' }
+  /v1/scenarios/{scenarioId}/regional-impacts:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getRegionalImpacts
+      tags: [RegionalImpacts]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Regional impacts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeRegionalImpact' }
+  /v1/scenarios/{scenarioId}/sector-impacts:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getSectorImpacts
+      tags: [SectorImpacts]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: sector
+          in: query
+          schema: { type: string, enum: [health, automotive, financial_services, other] }
+      responses:
+        '200':
+          description: Sector impacts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeSectorImpact' }
+  /v1/scenarios/{scenarioId}/labour-effects:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getLabourEffects
+      tags: [LabourEffects]
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Labour effects
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListEnvelopeLabourEffect' }
+  /v1/scenarios/{scenarioId}/export:
+    parameters:
+      - name: scenarioId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: exportScenarioPack
+      tags: [Reporting]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose]
+              properties:
+                purpose: { type: string, enum: [fiscal_event, devolved_briefing, public_explainer] }
+                includeCaveats: { type: boolean, default: true }
+      responses:
+        '201':
+          description: Export pack created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataEnvelopeExportPack' }
+components:
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+
+    DataEnvelopeScenario:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/Scenario' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeScenario:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Scenario' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeAssumptionSet:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/AssumptionSet' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeAssumptionSet:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AssumptionSet' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeAssumptionDiff:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/AssumptionDiff' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeAssumptionDiff:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AssumptionDiff' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeChannelImpact:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ChannelImpact' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeChannelImpact:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ChannelImpact' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeRegionalImpact:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/RegionalImpact' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeRegionalImpact:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/RegionalImpact' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeSectorImpact:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/SectorImpact' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeSectorImpact:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/SectorImpact' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeLabourEffect:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/LabourEffect' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeLabourEffect:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/LabourEffect' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    DataEnvelopeExportPack:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: '#/components/schemas/ExportPack' }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+    ListEnvelopeExportPack:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ExportPack' }
+            nextCursor: { type: string }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+
+    Scenario:
+      type: object
+      required: [id, label, assumptionSetId, status, releaseState]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        assumptionSetId: { type: string }
+        status: { type: string, enum: [draft, running, completed, failed] }
+        releaseState: { type: string, enum: [draft, release_candidate, published] }
+        gdpUpliftPct2030: { type: number }
+        gdpUpliftGbpBn2030: { type: number }
+        productivityChannelPct: { type: number }
+        consumptionChannelPct: { type: number }
+        caveatBanner: { type: string }
+        clonedFromScenarioId: { type: string }
+    ScenarioCreate:
+      type: object
+      required: [label, assumptionSetId]
+      properties:
+        label: { type: string }
+        assumptionSetId: { type: string }
+        seedCanonical103: { type: boolean, default: false }
+    AssumptionSet:
+      type: object
+      required: [id, version, giiScaledUptake, sCurveProfile]
+      properties:
+        id: { type: string }
+        version: { type: string }
+        giiScaledUptake: { type: boolean }
+        sCurveProfile: { type: string }
+        automationProbabilityThreshold: { type: number, default: 0.7 }
+        changelog: { type: string }
+    AssumptionSetCreate:
+      type: object
+      required: [version, giiScaledUptake, sCurveProfile]
+      properties:
+        version: { type: string }
+        giiScaledUptake: { type: boolean }
+        sCurveProfile: { type: string }
+        automationProbabilityThreshold: { type: number }
+        changelog: { type: string }
+    AssumptionDiff:
+      type: object
+      required: [leftId, rightId, changes]
+      properties:
+        leftId: { type: string }
+        rightId: { type: string }
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              leftValue: { type: string }
+              rightValue: { type: string }
+    ChannelImpact:
+      type: object
+      required: [channel, gdpPct2030]
+      properties:
+        channel: { type: string, enum: [productivity, quality, personalisation, time_saved] }
+        gdpPct2030: { type: number }
+        gbpBn2030: { type: number }
+        phase: { type: string, enum: [productivity_weighted, consumption_dominated] }
+    RegionalImpact:
+      type: object
+      required: [nation, gdpPct2030, gdpGbpBn2030, householdSpendUplift]
+      properties:
+        nation: { type: string, enum: [england, scotland, wales, northern_ireland] }
+        gdpPct2030: { type: number }
+        gdpGbpBn2030: { type: number }
+        householdSpendUplift: { type: number }
+    SectorImpact:
+      type: object
+      required: [sector, directImpactPct, inducedImpactPct]
+      properties:
+        sector: { type: string }
+        directImpactPct: { type: number }
+        inducedImpactPct: { type: number }
+        productEnhancementScore: { type: number }
+        aiElementMix:
+          type: object
+          properties:
+            automated: { type: number }
+            assisted: { type: number }
+            augmented: { type: number }
+            autonomous: { type: number }
+    LabourEffect:
+      type: object
+      required: [industryCode, redundancies, creations]
+      properties:
+        industryCode: { type: string }
+        redundancies: { type: number }
+        creations: { type: number }
+        inducedDemandJobs: { type: number }
+        regulatoryJobCategories:
+          type: array
+          items: { type: string }
+    ExportPack:
+      type: object
+      required: [id, scenarioId, purpose, caveatIncluded]
+      properties:
+        id: { type: string }
+        scenarioId: { type: string }
+        purpose: { type: string, enum: [fiscal_event, devolved_briefing, public_explainer] }
+        caveatIncluded: { type: boolean }
+        downloadUrl: { type: string, format: uri }
